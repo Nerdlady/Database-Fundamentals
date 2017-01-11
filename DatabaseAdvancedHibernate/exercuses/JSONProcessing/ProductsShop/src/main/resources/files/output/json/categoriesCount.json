@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Drugs",
+    "productsCount": 19,
+    "averagePrice": 658.865789,
+    "totalPrice": 12518.45
+  },
+  {
+    "name": "Sports",
+    "productsCount": 28,
+    "averagePrice": 856.978571,
+    "totalPrice": 23995.40
+  },
+  {
+    "name": "Adult",
+    "productsCount": 30,
+    "averagePrice": 870.164667,
+    "totalPrice": 26104.94
+  },
+  {
+    "name": "Electronics",
+    "productsCount": 32,
+    "averagePrice": 746.89875,
+    "totalPrice": 23900.76
+  },
+  {
+    "name": "Fashion",
+    "productsCount": 32,
+    "averagePrice": 749.829063,
+    "totalPrice": 23994.53
+  },
+  {
+    "name": "For Children",
+    "productsCount": 36,
+    "averagePrice": 836.646389,
+    "totalPrice": 30119.27
+  },
+  {
+    "name": "Garden",
+    "productsCount": 36,
+    "averagePrice": 620.239167,
+    "totalPrice": 22328.61
+  },
+  {
+    "name": "Business",
+    "productsCount": 38,
+    "averagePrice": 753.191053,
+    "totalPrice": 28621.26
+  },
+  {
+    "name": "Weapons",
+    "productsCount": 38,
+    "averagePrice": 831.589737,
+    "totalPrice": 31600.41
+  },
+  {
+    "name": "Autoparts",
+    "productsCount": 44,
+    "averagePrice": 718.321364,
+    "totalPrice": 31606.14
+  },
+  {
+    "name": "Other",
+    "productsCount": 45,
+    "averagePrice": 843.236444,
+    "totalPrice": 37945.64
+  }
+]

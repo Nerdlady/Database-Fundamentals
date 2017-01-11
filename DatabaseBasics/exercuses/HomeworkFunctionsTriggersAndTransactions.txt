@@ -1,0 +1,635 @@
+//1
+DELIMITER $$
+CREATE PROCEDURE usp_get_employees_salary_above_35000()
+BEGIN	
+				SELECT first_name,last_name
+				FROM employees
+				WHERE salary > 35000;
+END$$
+DELIMITER ;
+
+CALL usp_get_employees_salary_above_35000
+
+//2
+DELIMITER $$
+CREATE PROCEDURE usp_get_towns_starting_with (IN min_salary DECIMAL(19, 4))
+BEGIN	
+				SELECT first_name,last_name
+				FROM employees
+				WHERE salary >= min_salary;
+END$$
+DELIMITER ;
+
+CALL usp_get_employees_salary_above(48000)
+
+
+//3
+DELIMITER $$
+CREATE PROCEDURE usp_get_towns_starting_with (text VARCHAR(50))
+BEGIN	
+				SELECT name
+				FROM towns
+				WHERE name LIKE CONCAT(text, '%');
+END$$
+DELIMITER ;
+
+CALL usp_get_towns_starting_with('B')
+
+//4
+CREATE PROCEDURE usp_get_employees_from_town (town_name VARCHAR(50))
+BEGIN	
+				SELECT e.first_name,e.last_name
+				FROM employees AS e
+				INNER JOIN addresses AS a
+				ON e.address_id = a.address_id
+				INNER JOIN towns AS t
+				ON t.town_id = a.town_id
+				AND t.name = town_name;
+END
+
+//5
+DELIMITER $$
+CREATE FUNCTION ufn_get_salary_level  (salary DECIMAL)
+RETURNS VARCHAR(50)
+BEGIN	
+			IF(salary < 30000) THEN
+				RETURN 'Low';
+			ELSEIF	(salary BETWEEN 30000 AND 50000) THEN
+				RETURN 'Average';				
+			ELSE
+				RETURN 'High';
+			END IF;
+END$$
+DELIMITER ;
+
+SELECT first_name,ufn_get_salary_level(salary)
+FROM employees
+
+//6
+DELIMITER $$
+CREATE PROCEDURE usp_get_employees_by_salary_level (level_of_salary VARCHAR(50))
+BEGIN	
+SELECT first_name, last_name FROM employees
+	WHERE ufn_get_salary_level(salary) = level_of_salary;
+END$$
+DELIMITER ;
+
+CALL usp_get_employees_by_salary_level('HIGH')
+
+//7
+DELIMITER $$
+CREATE FUNCTION ufn_is_word_comprised(set_of_letters VARCHAR(50), word VARCHAR(50))
+RETURNS TINYINT
+BEGIN	
+ 	DECLARE counter INT;
+   DECLARE ch VARCHAR(255);
+    SET counter = 1;
+    WHILE counter < CHAR_LENGTH(word)
+    DO
+        SET ch = SUBSTRING(word, counter, 1);
+        IF (LOCATE(ch, set_of_letters, 1) = 0)
+        THEN
+            RETURN 0;
+        END IF;
+        
+        SET counter = counter + 1;
+    END WHILE;
+    RETURN 1;
+END$$
+DELIMITER ;
+SELECT Name, ufn_is_word_comprised('afiso', Name) FROM Towns
+
+//8*
+
+//9
+CREATE PROCEDURE usp_get_holders_full_name()
+BEGIN
+	SELECT CONCAT(first_name,' ',last_name) AS full_name
+	FROM account_holders;
+END
+
+//10
+CREATE PROCEDURE usp_get_holders_with_balance_higher_than(amount DECIMAL(19,4))
+BEGIN
+	SELECT ah.first_name,ah.last_name AS full_name
+	FROM accounts AS a
+	INNER JOIN account_holders AS ah
+	ON a.account_holder_id = ah.id
+	GROUP BY first_name, last_name
+	HAVING SUM(a.balance) > amount;
+END 
+
+//11
+DELIMITER $$
+CREATE FUNCTION ufn_calculate_future_value (i_sum DOUBLE,year_rate DOUBLE, yesrs DOUBLE)
+RETURNS DOUBLE
+BEGIN
+	RETURN i_sum * POW(1+year_rate,yesrs);
+END $$
+
+DELIMITER ;
+
+SELECT ufn_calculate_future_value(1000.0, 0.08, 5);
+
+//12
+DELIMITER $$
+CREATE PROCEDURE usp_calculate_future_value_for_account (id INT, rate DOUBLE)
+BEGIN
+	SELECT ah.id, ah.first_name,ah.last_name,a.balance AS current_balance,ufn_calculate_future_value (a.balance,rate,5)
+	FROM account_holders AS ah
+	INNER JOIN accounts AS a
+	ON a.account_holder_id = ah.id
+	WHERE ah.id = id;
+END $$
+
+DELIMITER ;
+
+CALL usp_calculate_future_value_for_account(1,0.1)
+
+//13
+DELIMITER $$
+CREATE PROCEDURE usp_deposit_money  (account_id INT, money_amount DECIMAL)
+BEGIN
+	UPDATE accounts
+	SET balance = balance + money_amount
+	WHERE id = account_id;
+END $$
+
+DELIMITER ;
+
+CALL usp_deposit_money(1,1)
+
+
+//14
+DELIMITER $$
+CREATE PROCEDURE usp_withdraw_money   (account_id INT, money_amount DECIMAL)
+BEGIN
+	UPDATE accounts
+	SET balance = balance - money_amount
+	WHERE id = account_id;
+END $$
+
+DELIMITER ;
+
+CALL usp_withdraw_money (1,100)
+
+//15
+DELIMITER $$
+CREATE PROCEDURE usp_transfer_money (first_account_id INT, second_account_id INT, money_amount DECIMAL)
+BEGIN
+	DECLARE max_id INT;
+	DECLARE first_account_money_after_transer DOUBLE;
+	SET max_id := (SELECT MAX(id) FROM accounts);	
+	SET first_account_money_after_transer := (SELECT balance FROM accounts WHERE id = first_account_id) - money_amount;
+	
+	START TRANSACTION;
+	
+	IF(first_account_id < 1 OR first_account_id > max_id OR second_account_id < 1 OR second_account_id > max_id) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT  = 'INVALID ID';
+			ROLLBACK;
+	ELSEIF(money_amount <=0) THEN
+				SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT  = 'CANNOT TRANSFER LESS OR EQUAL TO 0 MONEY';
+			ROLLBACK;
+	ELSEIF (first_account_money_after_transer < 0) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT  = ' FIRST ACCOUNT DO NOT HAVE ENOUGHT MONEY FOR TRANSFER';
+			ROLLBACK;
+	ELSE
+			CALL usp_withdraw_money(first_account_id,money_amount) ;
+			CALL  usp_deposit_money(second_account_id, money_amount);
+			COMMIT;
+	END IF;
+END $$
+
+DELIMITER ;
+
+
+CALL usp_transfer_money(3,1,1000000);
+
+//16
+DELIMITER $$
+CREATE TRIGGER tr_change_sum_of_account
+AFTER UPDATE
+ON accounts
+FOR EACH ROW
+BEGIN 
+		INSERT INTO `logs`(account_id,old_sum,new_sum)
+		VALUES (old.id,old.balance,new.balance);
+END$$
+
+DELIMITER ;
+
+CALL usp_transfer_money(3,1,10);
+
+//17
+DELIMITER $$
+CREATE TRIGGER tr_send_email
+AFTER INSERT
+ON `logs`
+FOR EACH ROW
+BEGIN 
+		INSERT INTO notification_emails(recipient,subject,body)
+		VALUES ( new.account_id,
+					CONCAT('Balance change for account: ',new.account_id),
+					CONCAT('On ',NOW(),' your balance was changed from ', new.old_sum,' to ',new.new_sum,'.'));
+END$$
+
+DELIMITER ;
+
+CALL usp_transfer_money(1,3,10);
+
+//18
+DELIMITER $$
+CREATE TRIGGER tr_user_item
+BEFORE INSERT
+ON user_game_items
+FOR EACH ROW
+BEGIN
+		 
+		 DECLARE current_user_game_id INT;
+		 DECLARE current_user_level INT;
+		 DECLARE item_min_level INT ;
+		 SET current_user_game_id := new.user_game_id;		 
+		 SET current_user_level := (SELECT `level` FROM users_games
+		  				WHERE id = current_user_game_id GROUP BY user_id);
+	  	 SET item_min_level := (SELECT min_level FROM items
+						WHERE id = new.item_id);
+				
+		IF( current_user_game_id < item_min_level) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT  = 'USER LEVEL LOW FOR THIS ITEM';		
+		
+		END IF;		
+END$$
+
+DELIMITER ;
+
+INSERT INTO user_game_items(item_id,user_game_id)
+VALUES (2,38)
+
+-- ADD
+UPDATE users_games
+SET cash = cash + 50000 
+WHERE user_id IN (
+	SELECT id 
+	FROM users 
+	WHERE user_name IN ('loosenoise', 'baleremuda', 'inguinalself', 'buildingdeltoid', 'monoxidecos')
+)
+AND game_id = (SELECT id FROM games 
+						WHERE name = 'Bali')
+						
+						
+-- BUY
+-- DELIMITER $$
+-- CREATE TRIGGER tr_item_bought
+-- AFTER INSERT
+-- ON user_game_items
+-- FOR EACH ROW
+-- BEGIN
+-- UPDATE users_games
+-- SET cash = cash - (SELECT price FROM items WHERE id = new.item_id)
+-- WHERE id = new.user_game_id;
+-- END $$
+
+DELIMITER ;
+INSERT INTO user_game_items(item_id,user_game_id)
+SELECT ug.id,i.id
+FROM users_games AS ug, items AS i
+WHERE ug.user_id IN (SELECT id 
+	FROM users 
+	WHERE user_name IN ('loosenoise', 'baleremuda', 'inguinalself', 'buildingdeltoid', 'monoxidecos'))
+AND ug.game_id = (SELECT id FROM games WHERE name = 'Bali') 
+AND ((i.id > 250 AND i.id < 300) OR (i.id > 500 AND i.id < 540));
+
+
+WHERE User_Id IN (
+	SELECT Id 
+	FROM Users 
+	WHERE User_name IN ('loosenoise', 'baleremuda', 'inguinalself', 'buildingdeltoid', 'monoxidecos')
+)
+AND Game_Id = (SELECT Id FROM Games 
+						WHERE Name = 'Bali')
+
+
+UPDATE users_games
+SET cash = cash - (SELECT SUM(i.price) FROM items i JOIN user_game_items ugi ON ugi.item_id = i.id WHERE ugi.user_game_id = users_games.id)
+WHERE user_id IN (
+	SELECT id 
+	FROM users 
+	WHERE user_name IN ('loosenoise', 'baleremuda', 'inguinalself', 'buildingdeltoid', 'monoxidecos')
+)
+AND Game_Id = (SELECT Id FROM Games where Name = 'Bali')
+
+
+-- SELECT 
+
+SELECT u.user_name, g.name, ug.cash, i.name as `item_name` FROM users_games ug
+JOIN games g 
+  ON ug.game_id = g.id
+JOIN users u 
+  ON ug.user_id = u.id
+JOIN user_game_items ugi 
+  ON ugi.user_game_id = ug.id
+JOIN items i 
+  ON i.id = ugi.item_Id
+WHERE g.name = 'Bali'
+ORDER BY user_name, `item_name`;
+
+// 19 
+START TRANSACTION;
+	UPDATE 
+		users_games
+	SET 
+		cash = cash - (SELECT SUM(price) FROM items 
+								WHERE min_level BETWEEN 11 AND 12
+								OR min_level BETWEEN 19 AND 21) 
+	WHERE id = 110;
+
+	INSERT INTO user_game_items (user_game_id, item_id)
+		SELECT 110, id FROM Items 
+			WHERE min_level BETWEEN 11 AND 12
+			OR min_level BETWEEN 19 AND 21;
+COMMIT;
+
+
+
+SELECT Items.Name as `Item Name`
+FROM Items 
+INNER JOIN User_Game_Items ON Items.Id = User_Game_Items.Item_Id 
+WHERE User_Game_Id = 110 
+ORDER BY `Item Name`
+
+//20
+SELECT SUBSTR(u.email, LOCATE('@',u.email) + 1,LENGTH(u.email) - LOCATE('@',u.email)) AS email_provider,COUNT(u.user_name)
+FROM users AS u
+GROUP BY SUBSTR(u.email, LOCATE('@',u.email) + 1,LENGTH(u.email) - LOCATE('@',u.email))
+ORDER BY COUNT(user_name) desc, email_provider
+
+
+//21
+SELECT g.name,gt.name, u.user_name,ug.`level`,ug.cash,c.name
+  FROM games AS g
+ INNER JOIN game_types AS gt
+    ON gt.id = g.game_type_id
+ INNER JOIN users_games AS ug
+    ON g.id = ug.game_id
+ INNER JOIN users AS u
+    ON u.id = ug.user_id
+ INNER JOIN characters AS c
+    ON c.id = ug.character_id
+ ORDER BY ug.`level` DESC, u.user_name ASC, g.name ASC
+
+//22
+SELECT u.user_name,g.name,COUNT(i.id) AS items_count,SUM(i.price) AS items_price
+  FROM users AS u
+ INNER JOIN users_games AS ug
+    ON ug.user_id = u.id
+ INNER JOIN user_game_items AS ugi
+    ON ugi.user_game_id = ug.id
+ INNER JOIN items AS i
+    ON i.id = ugi.item_id
+ INNER JOIN games AS g
+    ON g.id = ug.game_id
+ GROUP BY u.user_name,g.name
+ HAVING COUNT(i.id) > 9
+ ORDER BY items_count DESC,items_price DESC,u.user_name ASC
+
+//23
+SELECT u.user_name,
+		g.name AS Game,
+		MAX(c.name) AS 'Character',
+		SUM(s.strength) + MAX(gts.strength) + MAX(cs.strength) AS Strength,
+		SUM(s.defence)  + MAX(gts.defence) + MAX(cs.defence) AS Defense,
+		SUM(s.speed)  + MAX(gts.speed) + MAX(cs.speed) AS Speed,
+		SUM(s.mind)  + MAX(gts.mind) + MAX(cs.mind) AS Luck,
+		SUM(s.luck)  + MAX(gts.luck) + MAX(cs.luck) AS Mind		
+ FROM  users AS u
+INNER JOIN users_games AS ug
+   ON ug.user_id = u.id
+INNER JOIN games AS g
+   ON g.id = ug.game_id
+INNER JOIN characters AS c
+   ON c.id = ug.character_id
+INNER JOIN user_game_items AS ugi
+   ON ugi.user_game_id = ug.id
+INNER JOIN items AS i
+   ON i.id = ugi.item_id
+INNER JOIN statistics AS s
+   ON s.id = i.statistics_id
+INNER JOIN game_types AS gt
+   ON gt.id = g.game_type_id
+INNER JOIN statistics AS gts
+	ON gt.bonus_stats_id = gts.id
+INNER JOIN statistics AS cs
+  ON cs.id = c.statistics_id
+GROUP BY u.user_name, g.name
+ORDER BY Strength DESC,Defense DESC,Speed DESC, Mind DESC, Luck DESC
+
+//24
+SELECT i.name,i.price,i.min_level,s.strength,s.defence,s.speed,s.luck,s.mind FROM items AS i
+INNER JOIN statistics AS s
+ON i.statistics_id = s.id
+WHERE s.mind > (SELECT AVG(mind)
+        				FROM statistics)
+AND s.luck > (SELECT AVG(luck) 
+						FROM statistics)
+AND s.speed > (SELECT AVG(speed)
+					 	FROM statistics)
+ORDER BY i.name
+
+//25
+SELECT  i.name AS 'Item',i.price,i.min_level,gt.name AS 'Forbidden Game Type' FROM items AS i
+LEFT JOIN game_type_forbidden_items AS gtfi
+ON gtfi.item_id = i.id
+LEFT JOIN game_types AS gt
+ON gt.id = gtfi.game_type_id
+ORDER BY gt.name DESC,i.name ASC
+
+//26
+DELIMITER $$
+CREATE PROCEDURE usp_buy_items_for_alex () 
+BEGIN
+		  DECLARE alex_id INT ;
+		  SET alex_id := (SELECT ug.id FROM users_games AS ug
+		  								INNER JOIN users AS u
+		  								ON u.id = ug.user_id
+		  								INNER JOIN games AS g
+		  								ON g.id = ug.game_id
+		  								WHERE u.user_name = 'Alex' AND g.name = 'Edinburgh');
+		  							
+		   
+		   INSERT INTO user_game_items
+		   VALUES ((SELECT i.id FROM items AS i WHERE i.name = 'Blackguard') , alex_id);
+		   
+		   
+		   INSERT INTO user_game_items
+		   VALUES ((SELECT i.id FROM items AS i WHERE i.name = 'Bottomless Potion of Amplification') , alex_id);
+		   
+		   
+		   INSERT INTO user_game_items
+		   VALUES ((SELECT i.id FROM items AS i WHERE i.name = 'Eye of Etlich (Diablo III)') , alex_id);
+		   
+		   
+		   INSERT INTO user_game_items
+		   VALUES ((SELECT i.id FROM items AS i WHERE i.name = 'Gem of Efficacious Toxin') , alex_id);
+		   
+		   
+		   INSERT INTO user_game_items
+		   VALUES ((SELECT i.id FROM items AS i WHERE i.name = 'Golden Gorget of Leoric') , alex_id);
+		   
+		   
+		   INSERT INTO user_game_items
+		   VALUES ((SELECT i.id FROM items AS i WHERE i.name = 'Hellfire Amulet') , alex_id);
+		   
+		   
+		   UPDATE users_games
+		   SET cash = cash - (SELECT price FROM items WHERE name = 'Blackguard')
+		   WHERE id = alex_id;
+		   
+		   UPDATE users_games
+		   SET cash = cash - (SELECT price FROM items WHERE name = 'Bottomless Potion of Amplification')
+		   WHERE id = alex_id;
+		   
+		   UPDATE users_games
+		   SET cash = cash - (SELECT price FROM items WHERE name = 'Eye of Etlich (Diablo III)')
+		   WHERE id = alex_id;
+		   
+		   UPDATE users_games
+		   SET cash = cash - (SELECT price FROM items WHERE name = 'Gem of Efficacious Toxin')
+		   WHERE id = alex_id;
+		   
+		   UPDATE users_games
+		   SET cash = cash - (SELECT price FROM items WHERE name = 'Golden Gorget of Leoric')
+		   WHERE id = alex_id;
+		   
+		   UPDATE users_games
+		   SET cash = cash - (SELECT price FROM items WHERE name = 'Hellfire Amulet')
+		   WHERE id = alex_id;
+		   
+		   
+		   SELECT u.user_name,g.name,ug.cash,i.name AS 'Item Name' FROM users_games AS ug
+		   INNER JOIN users AS u
+		   ON u.id = ug.user_id
+		   INNER JOIN games AS g
+		   ON g.id = ug.game_id
+		   INNER JOIN user_game_items AS ugi
+		   ON ugi.user_game_id = ug.id
+		   INNER JOIN items AS i
+		   ON i.id = ugi.item_id
+		   WHERE g.name = 'Edinburgh'
+		   ORDER BY i.name;
+		   
+		   
+END $$ 
+
+CALL usp_buy_items_for_alex
+
+
+//27
+SELECT p.peak_name,m.mountain_range,p.elevation FROM peaks AS p
+INNER JOIN mountains AS m
+ON m.id = p.mountain_id
+ORDER BY p.elevation DESC,p.peak_name ASC
+
+//28
+SELECT p.peak_name,m.mountain_range,c.country_name,con.continent_name FROM peaks AS p
+INNER JOIN mountains AS m
+ON m.id = p.mountain_id
+INNER JOIN mountains_countries AS mc
+ON mc.mountain_id = m.id
+INNER JOIN countries AS c
+ON c.country_code = mc.country_code
+INNER JOIN continents AS con
+ON con.continent_code = c.continent_code
+ORDER BY p.peak_name ASC,c.country_name ASC
+
+//29
+SELECT c.country_name,con.continent_name,COUNT(r.river_name) AS Rivers_Count,IFNULL(SUM(r.length),0)AS Total_Length FROM countries AS c
+LEFT JOIN continents AS con
+ON con.continent_code = c.continent_code
+LEFT JOIN countries_rivers AS cr
+ON cr.country_code = c.country_code
+LEFT JOIN rivers AS r
+ON r.id = cr.river_id
+GROUP BY c.country_name,con.continent_name
+ORDER BY Rivers_Count DESC,Total_Length DESC, c.country_name ASC
+
+//30
+SELECT cur.currency_code ,MIN(cur.description) AS Currency,COUNT(c.country_name) AS NumberOfCountries FROM currencies AS cur
+LEFT JOIN countries AS c
+ON cur.currency_code = c.currency_code
+GROUP BY cur.currency_code
+ORDER BY NumberOfCountries DESC,Currency ASC
+
+//31
+SELECT con.continent_name,SUM(c.are_in_sq_km ) AS CountriesArea,SUM(c.population) AS CountriesPopulation  FROM continents AS con
+LEFT JOIN countries as c
+ON c.continent_code = con.continent_code
+GROUP BY con.continent_name
+ORDER BY CountriesPopulation DESC
+
+//32
+CREATE TABLE monasteries
+(id INT PRIMARY KEY AUTO_INCREMENT, 
+name VARCHAR(50), 
+country_code VARCHAR(45),
+CONSTRAINT fk_monasteries_countries FOREIGN KEY (country_code)
+REFERENCES countries(country_code)
+);
+
+INSERT INTO monasteries(name, country_code) VALUES
+('Rila Monastery “St. Ivan of Rila”', 'BG'), 
+('Bachkovo Monastery “Virgin Mary”', 'BG'),
+('Troyan Monastery “Holy Mother''s Assumption”', 'BG'),
+('Kopan Monastery', 'NP'),
+('Thrangu Tashi Yangtse Monastery', 'NP'),
+('Shechen Tennyi Dargyeling Monastery', 'NP'),
+('Benchen Monastery', 'NP'),
+('Southern Shaolin Monastery', 'CN'),
+('Dabei Monastery', 'CN'),
+('Wa Sau Toi', 'CN'),
+('Lhunshigyia Monastery', 'CN'),
+('Rakya Monastery', 'CN'),
+('Monasteries of Meteora', 'GR'),
+('The Holy Monastery of Stavronikita', 'GR'),
+('Taung Kalat Monastery', 'MM'),
+('Pa-Auk Forest Monastery', 'MM'),
+('Taktsang Palphug Monastery', 'BT'),
+('Sümela Monastery', 'TR');
+
+ALTER TABLE countries
+ADD COLUMN is_delete TINYINT DEFAULT 0;
+
+
+UPDATE countries
+SET is_delete = 1
+WHERE country_code IN
+				( SELECT cr.country_code FROM countries_rivers AS cr
+					GROUP BY cr.country_code
+					HAVING COUNT(cr.country_code) > 3 );
+					
+SELECT m.name AS Monastery,c.country_name AS Country 
+FROM monasteries AS m
+INNER JOIN countries AS c
+ON c.country_code = m.country_code
+WHERE c.is_delete = 0
+ORDER BY m.name;
+
+//33
+UPDATE countries
+SET country_name = 'Burma'
+WHERE country_name = 'Myanmar';
+
+INSERT INTO monasteries(name, country_code) VALUES
+('Hanga Abbey', (SELECT country_code FROM countries WHERE country_name = 'Tanzania'));
+
+INSERT INTO monasteries(name, country_code) VALUES
+('Myin-Tin-Daik', (SELECT country_code FROM countries WHERE country_name = 'Myanmar'));
+
+SELECT ct.continent_name, c.country_name, COUNT(m.id) AS monasteries_count
+FROM continents AS ct
+  LEFT JOIN countries AS c 
+    ON ct.continent_code = c.continent_code
+  LEFT JOIN monasteries AS m 
+    ON m.country_code = c.country_code
+WHERE c.is_delete = 0
+GROUP BY ct.continent_name, c.country_name
+ORDER BY monasteries_count DESC, c.country_name;

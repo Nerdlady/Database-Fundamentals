@@ -1,0 +1,359 @@
+//1
+CREATE TABLE persons(
+person_id INT,
+first_name VARCHAR(50),
+salary FLOAT,
+passport_id INT,
+PRIMARY KEY(person_id));
+
+CREATE TABLE passports(
+passport_id INT,
+passport_number VArCHAR(50),
+ PRIMARY KEY(passport_id)
+);
+
+ALTER TABLE persons
+ADD CONSTRAINT fk_persons_passports FOREIGN KEY (passport_id)
+REFERENCES passports(passport_id);
+
+INSERT INTO passports
+VALUES (101,"N34FG21B"),(102,"K65LO4R7"),(103,"ZE657QP2");
+INSERT INTO persons
+VALUES (1,"Roberto",43300.00,102),(2,"Tom",56100.00,103),(3,"Yana",60200.00,101);
+
+//2
+
+CREATE TABLE manufacturers(
+manufacturer_id INT,
+name VARCHAR(50),
+established_on DATE,
+PRIMARY KEY(manufacturer_id)
+);
+
+
+CREATE TABLE models(
+model_id INT,
+name VARCHAR(50),
+manufacturer_id INT,
+PRIMARY KEY (model_id),
+FOREIGN KEY (manufacturer_id) REFERENCES manufacturers(manufacturer_id)
+);
+
+INSERT INTO manufacturers(manufacturer_id,name,established_on)
+VALUES (1,"BMW" ,"1916-03-07"),(2,"Tesla","2003-01-01"),(3,"Lada","1966-05-01");
+
+INSERT INTO models(model_id,name,manufacturer_id)
+VALUES (101,"X1",1),(102,"i6",1),(103,"Model S",2),(104,"Model x",2),(105, "Model 3",2),(106,"Nova",3)
+
+//3
+CREATE TABLE students(
+student_id INT,
+name VARCHAR(50),
+PRIMARY KEY(student_id)
+);
+
+CREATE TABLE exams(
+exam_id INT,
+name VARCHAR(50),
+PRIMARY KEY(exam_id)
+);
+
+CREATE TABLE students_exams(
+student_id INT,
+exam_id INT,
+PRIMARY KEY(student_id,exam_id),
+FOREIGN KEY (student_id) REFERENCES students(student_id),
+FOREIGN KEY (exam_id) REFERENCES exams(exam_id)
+);
+
+INSERT INTO students(student_id,name)
+VALUES (1,"Mila"),(2,"Toni"),(3,"Ron");
+
+INSERT INTO exams(exam_id,name)
+VALUES (101,"Spring MVC"),(102,"Neo4j"),(103,"Oracle 11g");
+
+INSERT INTO students_exams(student_id,exam_id)
+VALUES (1,101),(1,102),(2,101),(3,103),(2,102),(2,103);
+
+//4
+CREATE TABLE teachers(
+teacher_id INT PRIMARY KEY,
+name VARCHAR(50),
+manager_id INT
+);
+
+INSERT INTO teachers(teacher_id,name,manager_id)
+VALUES (101,"Jonh",NULL), (102,"Maya",106), (103,"Silvia",106), (104,"Ted",105), (105,"Mark",101), (106,"Greta",101);
+
+ALTER TABLE teachers
+ADD FOREIGN KEY(manager_id) REFERENCES teachers(teacher_id)
+
+//5
+CREATE DATABASE online_store;
+
+CREATE TABLE cities(
+city_id INT PRIMARY KEY,
+name VARCHAR(50)
+);
+
+CREATE TABLE customers(
+customer_id INT PRIMARY KEY,
+name VARCHAR(50),
+birthdat DATE,
+city_id INT,
+FOREIGN KEY (city_id) REFERENCES cities(city_id)
+);
+
+CREATE TABLE orders(
+order_id INT PRIMARY KEY,
+customer_id INT,
+FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
+
+CREATE TABLE item_types(
+item_type_id INT PRIMARY KEY,
+name VARCHAR(50)
+);
+
+CREATE TABLE items(
+item_id INT PRIMARY KEY,
+name VARCHAR(50),
+item_type_id INT,
+FOREIGN KEY (item_type_id) REFERENCES item_types(item_type_id)
+);
+
+CREATE TABLE order_items(
+order_id INT ,
+item_id INT,
+PRIMARY KEY (order_id,item_id),
+FOREIGN KEY (order_id) REFERENCES orders(order_id),
+FOREIGN KEY (item_id) REFERENCES items(item_id)
+);	
+
+//6
+CREATE DATABASE university;
+
+CREATE TABLE majors(
+major_id INT PRIMARY KEY,
+name VARCHAR(50)
+);
+
+CREATE TABLE students(
+student_id INT PRIMARY KEY,
+student_number VARCHAR(12),
+student_name VARCHAR(50),
+major_id INT,
+FOREIGN KEY (major_id) REFERENCES majors(major_id)
+);
+
+CREATE TABLE payments(
+payment_id INT PRIMARY KEY,
+paymentsData  DATE,
+payment_amount DECIMAL(8,2),
+student_id INT,
+FOREIGN KEY (student_id) REFERENCES students(student_id)
+);
+
+CREATE TABLE subjects(
+subject_id INT PRIMARY KEY,
+subject_name VARCHAR(50)
+);
+
+CREATE TABLE agenda(
+student_id INT,
+subject_id INT,
+PRIMARY KEY(student_id,subject_id),
+FOREIGN KEY (student_id) REFERENCES students(student_id),
+FOREIGN KEY (subject_id) REFERENCES subjects(subject_id)
+);
+
+//7
+--
+//8
+--
+
+//9
+SELECT e.employee_id,e.job_title,e.address_id, a.address_text
+  FROM employees AS e
+ LEFT OUTER JOIN addresses AS a
+    ON e.address_id = a.address_id
+    ORDER BY e.address_id ASC
+    LIMIT 5
+
+SELECT e.employee_id,e.job_title,e.address_id, a.address_text
+  FROM employees AS e
+ INNER JOIN addresses AS a
+    ON e.address_id = a.address_id
+    ORDER BY e.address_id ASC
+    LIMIT 5
+
+
+//10
+SELECT e.employee_id,e.first_name,e.salary, a.name
+  FROM employees AS e
+ INNER JOIN departments AS a
+    ON e.department_id = a.department_id
+    AND e.salary > 15000
+    ORDER BY e.department_id ASC
+    LIMIT 5
+
+//11
+SELECT e.employee_id,e.first_name
+  FROM employees AS e
+ WHERE e.employee_id NOT IN (SELECT employee_id FROM employees_projects AS a)
+ ORDER BY e.employee_id
+ LIMIT 3
+
+//12
+SELECT e.employee_id,e.first_name,p.name AS 'project_name'
+  FROM employees AS e
+ INNER JOIN employees_projects AS ep
+ ON e.employee_id = ep.employee_id 
+ INNER JOIN projects AS p
+ ON ep.project_id = p.project_id
+ AND p.start_date > '2002-08-13'
+ AND p.end_date IS NULL
+ ORDER BY e.employee_id
+LIMIT 5
+
+//13
+
+SELECT e.employee_id,e.first_name,p.name AS 'project_name'
+  FROM employees AS e
+ INNER JOIN employees_projects AS ep
+ 	 ON e.employee_id = ep.employee_id 
+ LEFT JOIN projects AS p
+    ON ep.project_id = p.project_id
+    AND YEAR(p.start_date) < '2005'
+ WHERE e.employee_id = 24
+
+//14
+SELECT e.employee_id,e.first_name,e.manager_id,m.first_name AS manager_name
+FROM employees AS e
+INNER JOIN employees AS m
+ON e.manager_id = m.employee_id
+WHERE  m.employee_id = 3 OR m.employee_id = 7
+ORDER BY e.employee_id
+
+//15
+SELECT c.country_code,m.mountain_range,p.peak_name,p.elevation
+FROM countries AS c
+INNER JOIN mountains_countries AS mc
+ON c.country_code = mc.country_code
+INNER JOIN mountains AS m
+ON m.id =mc.mountain_id
+INNER JOIN peaks AS p
+ON p.mountain_id = mc.mountain_id
+WHERE p.elevation > 2835 
+AND c.country_code = 'BG'
+ORDER BY p.elevation DESC
+
+//16
+SELECT c.country_code,COUNT(m.mountain_range)
+FROM countries AS c
+INNER JOIN mountains_countries AS mc
+ON c.country_code = mc.country_code
+INNER JOIN mountains AS m
+ON m.id =mc.mountain_id
+WHERE c.country_code = 'BG'
+OR c.country_code = 'US'
+OR c.country_code = 'RU'
+GROUP BY c.country_code
+
+//17
+SELECT c.country_name,r.river_name
+FROM countries AS c
+LEFT JOIN countries_rivers AS cr
+ON c.country_code = cr.country_code
+LEFT JOIN rivers AS r
+ON r.id = cr.river_id
+WHERE c.continent_code = 'AF'
+ORDER BY c.country_name ASC
+LIMIT 5
+
+//18
+CREATE TABLE all_currency_in_coutnry AS 
+SELECT co.continent_code, cu.currency_code, COUNT(*) AS currency_usage
+				  FROM countries AS co
+				 INNER JOIN currencies AS cu
+				    ON co.currency_code = cu.currency_code
+				 GROUP BY co.continent_code, c.currency_code;
+
+CREATE TABLE currency_usage AS
+			SELECT cur.continent_code, MAX(cur.currency_usage) AS max_currency_usage
+  FROM
+		all_currency_in_coutnry AS cur
+		GROUP BY cur.continent_code
+		HAVING MAX(cur.currency_usage) > 1;
+ 
+ SELECT cur.* 
+   FROM  
+	 all_currency_in_coutnry AS cur
+ INNER JOIN currency_usage cu
+    ON cu.continent_code = cur.continent_code
+   AND cu.max_currency_usage = cur.currency_usage
+ ORDER BY continent_code;
+
+DROP TABLE currency_usage;
+DROP TABLE all_currency_in_coutnry;
+
+//19
+ SELECT COUNT(*)
+  FROM countries AS c
+  LEFT JOIN mountains_countries AS mc
+    ON c.country_code = mc.country_code
+ WHERE mc.mountain_id IS NULL
+
+//20
+ SELECT c.country_name, MAX(p.elevation)  AS 'highest_peak_elevation',MAX(r.length) AS longest_river_length
+  FROM countries AS c
+  LEFT JOIN mountains_countries AS mc
+  ON mc.country_code = c.country_code
+  LEFT JOIN peaks AS p
+  ON p.mountain_id = mc.mountain_id
+  LEFT JOIN countries_rivers AS cr
+  ON cr.country_code = c.country_code
+  LEFT JOIN rivers AS r
+  ON cr.river_id = r.id
+    GROUP BY c.country_name
+    ORDER BY MAX(p.elevation) DESC,MAX(r.length) DESC,c.country_code
+    LIMIT 5
+
+//21
+SELECT * FROM(
+		SELECT
+		  c.country_name AS country,
+		  p.peak_name AS highest_peak_name,
+		  p.elevation AS highest_peak_elevation,
+		  m.mountain_range AS mountain
+		FROM
+		  countries c
+		  LEFT JOIN mountains_countries mc ON c.country_code = mc.country_code
+		  LEFT JOIN mountains m ON m.id = mc.mountain_id
+		  LEFT JOIN peaks p ON p.mountain_id = m.id
+		WHERE p.elevation =
+			  (SELECT MAX(p.elevation)
+			   FROM mountains_countries mc
+			     LEFT JOIN mountains m ON m.id = mc.mountain_id
+			     LEFT JOIN peaks p ON p.mountain_id = m.id
+			   WHERE c.country_code = mc.country_code)
+		UNION
+		SELECT
+		  c.country_name AS country,
+		  '(no highest peak)' AS highest_peak_name,
+		  0 AS highest_peak_elevation,
+		  '(no mountain)' AS mountain
+		FROM
+		  countries c
+		  LEFT JOIN mountains_countries mc ON c.country_code = mc.country_code
+		  LEFT JOIN mountains m ON m.id = mc.mountain_id
+		  LEFT JOIN peaks p ON p.mountain_id = m.id
+		WHERE 
+		  (SELECT MAX(p.elevation)
+		   FROM mountains_countries mc
+		     LEFT JOIN mountains m ON m.id = mc.mountain_id
+		     LEFT JOIN peaks p ON p.mountain_id = m.id
+		   WHERE c.country_code = mc.country_code) IS NULL
+		   ) AS c
+ORDER BY country, highest_peak_name
+LIMIT 5

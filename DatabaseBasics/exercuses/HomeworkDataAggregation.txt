@@ -1,0 +1,133 @@
+//1
+SELECT COUNT(*) AS 'count' FROM wizzard_deposits 
+
+//2
+SELECT MAX(magic_wand_size) AS 'longest_magic_wand' FROM wizzard_deposits 
+
+//3
+SELECT deposit_group,MAX(magic_wand_size) AS 'longest_magic_wand' 
+FROM wizzard_deposits 
+GROUP BY deposit_group
+
+//4*
+SELECT deposit_group
+  FROM (
+SELECT deposit_group, AVG(magic_wand_size) AS 'longest_magic_wand'
+  FROM wizzard_deposits) AS e
+ GROUP BY deposit_group
+HAVING MIN(e.longest_magic_wand)
+
+//5
+SELECT deposit_group,SUM(deposit_amount) AS 'total_sum'
+ FROM wizzard_deposits
+GROUP BY deposit_group
+
+//6
+SELECT deposit_group,SUM(deposit_amount) AS 'total_sum'
+ FROM wizzard_deposits
+ WHERE magic_wand_creator = 'Ollivander family'
+GROUP BY deposit_group
+
+//7
+SELECT deposit_group,SUM(deposit_amount) AS 'total_sum'
+ FROM wizzard_deposits
+ WHERE magic_wand_creator = 'Ollivander family'
+GROUP BY deposit_group
+HAVING SUM(deposit_amount) <150000
+ORDER BY total_sum DESC
+
+//8
+SELECT deposit_group,magic_wand_creator,MIN(deposit_charge) AS 'min_deposit_charge'
+ FROM wizzard_deposits
+GROUP BY deposit_group,magic_wand_creator
+ORDER BY magic_wand_creator ASC,deposit_group
+
+//9
+SELECT 
+	CASE WHEN age <= 10 THEN '[0-10]'
+	  	  WHEN age <= 20 THEN '[11-20]'
+	     WHEN age <= 30 THEN '[21-30]'
+	     WHEN age <= 40 THEN '[31-40]'
+	     WHEN age <= 50 THEN '[41-50]'
+	     WHEN age <= 60 THEN '[51-60]'
+		  ELSE '[61+]'
+			END AS 'age_group',COUNT(*) AS wizard_count
+			FROM wizzard_deposits 
+			GROUP BY age_group
+			
+//10
+SELECT LEFT(first_name,1) AS A FROM wizzard_deposits
+WHERE deposit_group = 'Troll Chest'
+GROUP BY LEFT(first_name,1)
+
+//11
+SELECT deposit_group,is_deposit_expired,AVG(deposit_interest) AS average_interest
+FROM wizzard_deposits
+WHERE deposit_start_date > '1985-01-01'
+GROUP BY deposit_group, is_deposit_expired
+ORDER BY deposit_group DESC,is_deposit_expired ASC
+
+//12
+SELECT SUM(g1.deposit_amount - g2.deposit_amount) AS 'sum_difference'
+ FROM wizzard_deposits AS g1
+LEFT JOIN wizzard_deposits AS g2
+ON g1.id = g2.id - 1
+ORDER BY g1.id
+
+//13
+SELECT department_id,MIN(salary) FROM employees
+WHERE hire_date >'2000-01-01' 
+AND department_id = 2 
+OR department_id = 5 
+OR department_id = 7	
+GROUP BY department_id
+HAVING MIN(salary)
+
+//14
+CREATE TABLE new_table as
+SELECT * FROM employees
+WHERE salary > 30000
+
+DELETE FROM new_table 
+WHERE manager_id = 42
+
+UPDATE new_table
+SET salary = salary + 5000
+WHERE department_id = 1
+
+SELECT department_id, AVG(salary) AS 'average_salary' FROM new_table
+GROUP BY department_id
+
+//15
+SELECT department_id, MAX(salary) AS 'max'
+ FROM employees
+ GROUP BY department_id
+ HAVING MAX(salary) < 30000 OR MAX(salary) > 70000
+
+//16
+SELECT COUNT(*) AS 'count' FROM employees
+  WHERE manager_id IS NULL
+
+//17
+SELECT e.department_id,MAX(e.salary) AS third_highest_salary FROM employees AS e
+	JOIN 
+	 (SELECT a.department_id,MAX(a.salary) AS max2 FROM employees AS a
+			JOIN 
+			 		(SELECT department_id,MAX(salary) AS max1 FROM employees
+			  			GROUP BY department_id) AS e1
+			  ON e1.department_id = a.department_id
+			  AND e1.max1 > a.salary
+			  GROUP BY a.department_id) AS e2
+			  ON e.department_id = e2.department_id
+			  AND  e2.max2 > e.salary
+			  GROUP BY e.department_id
+
+//18
+SELECT ee.first_name, ee.last_name, ee.department_id FROM employees AS ee
+		INNER JOIN
+		(SELECT department_id,AVG(salary) AS avg_salary FROM employees
+			GROUP BY department_id) AS e
+			ON ee.department_id = e.department_id
+			AND ee.salary > e.avg_salary
+			ORDER BY ee.department_id
+			LIMIT 10

@@ -1,0 +1,430 @@
+INSERT INTO minions.towns(id,name)
+VALUES(1,'Sofia');
+INSERT INTO minions.towns(id,name)
+VALUES (2,'Plovdiv');
+INSERT INTO minions.towns(id,name)
+VALUES (3,'Varna');
+INSERT INTO minions.minions(id,name,age,town_id)
+VALUES(1,'Kevin',22,1);
+INSERT INTO minions.minions(id,name,age,town_id)
+VALUES(2,'Bob',15,3);
+INSERT INTO minions.minions(id,name,age,town_id)
+VALUES(3,'Steward',NULL,2);
+
+//
+TRUNCATE TABLE minions.minions ;
+
+//
+CREATE TABLE people
+(
+id INT NOT NULL AUTO_INCREMENT,
+name VARCHAR(200) NOT NULL,
+picture BLOB,
+height FLOAT,
+weight FLOAT,
+gender ENUM('m','f') NOT NULL,
+birthday DATE NOT NULL,
+biography LONGTEXT,
+PRIMARY KEY(id)
+);
+
+INSERT INTO people(name,height,weight,gender,birthday)
+VALUES('PEHSO',123.25,65,'m','1996-02-05'),
+('ivan',163.25,75,'m','1999-02-06'),
+('tosho',173.25,85,'m','1993-02-05'),
+('misho',183.25,95,'m','1990-08-09'),
+('iva',153.25,55,'f','1996-02-05');
+
+//
+CREATE TABLE users
+(
+id INT NOT NULL AUTO_INCREMENT,
+username VARCHAR(200) NOT NULL,
+password VARCHAR(26) NOT NULL,
+profile_picture BLOB(900),
+last_login_time DATE,
+is_deleted TINYINT,
+PRIMARY KEY(id),
+UNIQUE(username)
+);
+
+INSERT INTO users(username,password,is_deleted)
+VALUES('PEHSO','FSDAG',1),
+('ivan','FSDAG',1),
+('tosho','FSDAG',1),
+('misho','FSDAG',1),
+('iva','FSDAG',1);
+
+//
+ALTER TABLE users
+MODIFY id INT NOT NULL,
+DROP PRIMARY KEY
+
+ALTER TABLE users
+ADD PRIMARY KEY(id,username)
+
+//
+ALTER TABLE users
+ADD CHECK(passward>5)
+
+//
+ALTER TABLE users
+MODIFY COLUMN last_login_time DATETIME DEFAULT NOW()
+
+///ALTER TABLE users
+MODIFY id INT NOT NULL,
+DROP PRIMARY KEY
+
+ALTER TABLE users
+ADD PRIMARY KEY(id),
+ADD UNIQUE (username),
+ADD CHECK(username>3)
+
+//
+CREATE TABLE directors 
+(
+id INT NOT NULL AUTO_INCREMENT,
+director_name VARCHAR(50) NOT NULL,
+notes VARCHAR(50),
+PRIMARY KEY(id)
+);
+
+CREATE TABLE genres  
+(
+id INT NOT NULL AUTO_INCREMENT,
+genre_name VARCHAR(50) NOT NULL,
+notes VARCHAR(50),
+PRIMARY KEY(id)
+);
+
+CREATE TABLE categories   
+(
+id INT NOT NULL AUTO_INCREMENT,
+category_name VARCHAR(50) NOT NULL,
+notes VARCHAR(50),
+PRIMARY KEY(id)
+);
+
+CREATE TABLE movies    
+(
+id INT NOT NULL AUTO_INCREMENT,
+title VARCHAR(50) NOT NULL,
+director_id INT NOT NULL,
+copyright_year DATE NOT NULL,
+length FLOAT NOT NULL,
+genre_id INT NOT NULL,
+category_id INT NOT NULL,
+rating FLOAT,
+notes VARCHAR(50),
+PRIMARY KEY(id)
+)	;
+
+INSERT INTO directors(director_name)
+VALUES('PESHO'),('IVAN'),('GOSHO'),('IVAN'),('GOSHO');
+
+
+INSERT INTO genres(genre_name)
+VALUES('PESHO'),('IVAN'),('GOSHO'),('IVAN'),('GOSHO');
+
+
+INSERT INTO categories(category_name)
+VALUES('sci'),('DRAMA'),('COMEDY'),('IVAN'),('GOSHO');
+
+INSERT INTO movies(title,director_id,copyright_year,length,genre_id,category_id)
+VALUES('STAR WARS',1,'1987-05-05',100.25,2,1),
+('NESHTOSI',2,'1987-05-05',90.25,1,3),
+('STAR WARS',4,'1987-05-05',100.25,3,2),
+('NESHTOSI',2,'1987-05-05',90.25,1,3),
+('STAR WARS',4,'1987-05-05',100.25,3,2);
+
+
+//
+
+CREATE TABLE categories  
+(
+id INT NOT NULL AUTO_INCREMENT,
+category  VARCHAR(50) NOT NULL,
+daily_rate FLOAT,
+weekly_rate FLOAT,
+monthly_rate FLOAT,
+weekend_rate FLOAT,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE cars   
+(
+id INT NOT NULL AUTO_INCREMENT,
+genre_name VARCHAR(50) NOT NULL,
+make VARCHAR(50) NOT NULL,
+model VARCHAR(50) NOT NULL,
+car_year DATE,
+category_id INT NOT NULL,
+doors INT,
+picture BLOB,
+`condition` VARCHAR(20),
+available TINYINT,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE employees    
+(
+id INT NOT NULL AUTO_INCREMENT,
+first_name VARCHAR(50) NOT NULL,
+last_name VARCHAR(50) NOT NULL,
+title VARCHAR(50),
+notes TEXT,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE customers     
+(
+id INT NOT NULL AUTO_INCREMENT,
+driver_licence_number VARCHAR(50) NOT NULL,
+full_name VARCHAR(50) NOT NULL,
+address VARCHAR(100),
+city VARCHAR(50),
+zip_code VARCHAR(50),
+notes TEXT,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE rental_orders     
+(
+id INT NOT NULL AUTO_INCREMENT,
+employee_id INT NOT NULL,
+customer_id INT NOT NULL,
+car_id INT NOT NULL,
+car_condition VARCHAR(50), 
+tank_level INT, 
+kilometrage_start FLOAT, 
+kilometrage_end FLOAT,
+total_kilometrage FLOAT,
+start_date DATE, 
+end_date DATE, 
+total_days DATE,
+rate_applied FLOAT,
+tax_rate FLOAT,
+order_status VARCHAR(50), 
+notes TEXT,
+PRIMARY KEY(id)
+);
+
+INSERT INTO categories(category)
+VALUES('PESHO'),('IVAN'),('GOSHO');
+
+
+INSERT INTO cars(genre_name ,make, model ,category_id)
+VALUES('PESHO','GSDGS','GSDGF',1),('PESHO','GSDGS','GSDGF',2),('PESHO','GSDGS','GSDGF',3);
+
+
+INSERT INTO employees(first_name,last_name)
+VALUES('ivo','ivov'),('ico','icov'),('pehso','peshov');
+
+INSERT INTO customers(driver_licence_number,full_name )
+VALUES('vfdhtgfhsgtd','ivo ivov'),
+('vfdhtgfhsgtd','ivo ivov'),
+('vfdhtgfhsgtd','ivo ivov');
+
+
+INSERT INTO rental_orders(employee_id ,customer_id,car_id )
+VALUES(1,2,3),
+(1,2,3),
+(1,2,3);
+
+
+//
+
+CREATE TABLE employees    
+(
+id INT NOT NULL AUTO_INCREMENT,
+first_name VARCHAR(50) NOT NULL,
+last_name VARCHAR(50) NOT NULL,
+title VARCHAR(50),
+notes TEXT,
+PRIMARY KEY(id)
+);
+
+CREATE TABLE customers     
+(
+account_number VARCHAR(50) NOT NULL,
+first_name VARCHAR(50) NOT NULL,
+last_name VARCHAR(50) NOT NULL,
+phone_number VARCHAR(20),
+emergency_name VARCHAR(50),
+emergency_number VARCHAR(20),
+notes TEXT,
+PRIMARY KEY(account_number)
+);
+
+CREATE TABLE room_status   
+(
+room_status VARCHAR(20),
+notes TEXT,
+PRIMARY KEY(room_status)
+);
+
+
+CREATE TABLE room_types    
+(
+room_type VARCHAR(20),
+notes TEXT,
+PRIMARY KEY(room_type)
+);
+
+CREATE TABLE bed_types    
+(
+bed_type VARCHAR(20),
+notes TEXT,
+PRIMARY KEY(bed_type )
+);
+
+CREATE TABLE rooms     
+(
+room_number INT NOT NULL,
+room_type VARCHAR(50),
+bed_type VARCHAR(20),
+rate FLOAT,
+room_status VARCHAR(20),
+notes TEXT,
+PRIMARY KEY(room_number )
+);
+
+CREATE TABLE payments      
+(
+id INT NOT NULL AUTO_INCREMENT,
+employee_id INT NOT NULL,
+payment_date DATE,
+account_number VARCHAR(50),
+first_date_occupied DATE,
+last_date_occupied DATE,
+total_days DATE,
+amount_charged FLOAT,
+tax_rate FLOAT, 
+tax_amount FLOAT,
+ payment_total FLOAT,
+notes TEXT,
+PRIMARY KEY(id )
+);
+
+CREATE TABLE occupancies       
+(
+id INT NOT NULL AUTO_INCREMENT,
+employee_id INT NOT NULL,
+account_number VARCHAR(50),
+date_occupied DATE,
+room_number INT,
+rate_applied FLOAT,
+phone_charge FLOAT, 
+notes TEXT,
+PRIMARY KEY(id )
+);
+
+
+
+
+
+INSERT INTO employees(first_name,last_name)
+VALUES('ivo','ivov'),('ico','icov'),('pehso','peshov');
+
+INSERT INTO customers(account_number,first_name,last_name )
+VALUES('vfdhtgfhsgGFDGtd','ivo',' ivov'),
+('vfdhtgfhsgtd','ivo',' ivov'),
+('vfdhDFGFDGtgfhsgtd','ivo',' ivov');
+
+
+INSERT INTO room_status(room_status  )
+VALUES("PISNA MI"),
+("DA PISHA"),
+("EDNO I SASHTO");
+
+INSERT INTO room_types(room_type  )
+VALUES("PISNA MI"),
+("DA PISHA"),
+("EDNO I SASHTO");
+
+INSERT INTO bed_types(bed_type  )
+VALUES("PISNA MI"),
+("DA PISHA"),
+("EDNO I SASHTO");
+
+
+INSERT INTO rooms(room_number  )
+VALUES(1),
+(2),
+(3);
+
+INSERT INTO payments(employee_id  )
+VALUES(1),
+(2),
+(3);
+
+INSERT INTO occupancies(employee_id  )
+VALUES(1),
+(2),
+(3);
+
+//
+CREATE TABLE 	towns 
+(
+id INT NOT NULL AUTO_INCREMENT,
+name VARCHAR(50),
+PRIMARY KEY(id)
+);
+
+CREATE TABLE addresses 
+(
+id INT NOT NULL AUTO_INCREMENT,
+address_text TEXT NOT NULL,
+town_id INT NOT NULL,
+PRIMARY KEY(id),
+FOREIGN KEY (town_id) REFERENCES towns(id)
+);
+
+CREATE TABLE departments 
+(
+id INT NOT NULL AUTO_INCREMENT, 
+name VARCHAR(50),
+PRIMARY KEY(id)
+);
+
+CREATE TABLE employees 
+(
+id INT NOT NULL AUTO_INCREMENT, 
+first_name VARCHAR(50) NOT NULL, 
+middle_name VARCHAR(50) NOT NULL, 
+last_name VARCHAR(50) NOT NULL, 
+job_title VARCHAR(50) NOT NULL, 
+department_id INT NOT NULL, 
+hire_date  DATE, 
+salary DOUBLE, 
+address_id INT NOT NULL,
+PRIMARY KEY(id),
+FOREIGN KEY (department_id) REFERENCES departments(id),
+FOREIGN KEY (address_id) REFERENCES addresses(id)
+)
+//
+INSERT INTO employees(first_name, middle_name, last_name, job_title, department_id, hire_date, salary)
+VALUES ('Ivan','Ivanov', 'Ivanov','.NET Developer',4,"2013-02-01",3500.00),
+		('Petar','Petrov', 'Petrov','Senior Engineer',1,"2004-03-02",4000.00),
+		('Maria','Petrova', 'Ivanova','Intern',5,"2016-08-28",525.25),
+		('Georgi','Teziev', 'Ivanov','CEO',2,"2007-12-09",3000.00),
+		('Peter','Pan', 'Pan','Intern',3,"2016-08-28",599.88);
+//
+SELECT * FROM towns;
+
+SELECT * FROM departments;
+
+SELECT * FROM employees;
+//
+
+
+UPDATE employees SET salary = salary*1.1;
+SELECT salary FROM employees
+//
+UPDATE payments SET tax_rate = tax_rate/1.03;
+SELECT tax_rate FROM payments
+
+//
+TRUNCATE TABLE occupancies
+
+

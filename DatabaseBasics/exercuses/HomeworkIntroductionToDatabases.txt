@@ -1,0 +1,22 @@
+SELECT * FROM minions.minions;
+
+SELECT name FROM minions.minions ORDER BY name ASC;
+
+UPDATE minions.minions SET age = 10 WHERE name='Stuart';
+
+UPDATE minions.minions SET age = age + 1;
+
+SELECT * FROM school.students;
+
+UPDATE school.students SET phone_number = '+35912345678' WHERE id=3;
+
+DELETE FROM school.students WHERE id = 1;
+
+INSERT INTO school.teachers (name ,class_id) VALUES ('Penka',1);
+classes
+SELECT * FROM school.teachers;
+
+DROP TABLE school.classes;
+
+
+
